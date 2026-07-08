@@ -27,6 +27,9 @@ def project_perspective(point_cam, f):
     #### START PUT CODE HERE #########
     x = 0.0
     y = 0.0
+
+    x = f * X / Z
+    y = f * Y / Z
     ###### END PUT CODE HERE #########
     ##################################
     return (x, y)
@@ -45,6 +48,9 @@ def meters_to_pixels(x, y, pixel_size, principal_point):
     #### START PUT CODE HERE #########
     u = 0.0
     v = 0.0
+
+    u = x / pixel_size + cx
+    v = y / pixel_size + cy
     ###### END PUT CODE HERE #########
     ##################################
     return (u, v)
@@ -57,7 +63,10 @@ def intrinsic_matrix(fx, fy, cx, cy):
     """
     ##################################
     #### START PUT CODE HERE #########
-    K = np.eye(3)
+    #K = np.eye(3)
+
+    K = np.matrix([[fx, 0, cx], [0, fy, cy], [0, 0, 1]])
+
     ###### END PUT CODE HERE #########
     ##################################
     return K
@@ -75,6 +84,13 @@ def project_world_point(K, R, t, point_world):
     #### START PUT CODE HERE #########
     u = 0.0
     v = 0.0
+
+    p_cam = np.matmul(R, point_world) + t
+    p_cam = np.matmul(K, p_cam)
+
+    u = p_cam[0, 0] / p_cam[0, 2]
+    v = p_cam[0, 1] / p_cam[0, 2]
+
     ###### END PUT CODE HERE #########
     ##################################
     return (u, v)
@@ -86,10 +102,11 @@ def apply_radial_distortion(x, y, k1, k2):
     Apply radial (barrel/pincushion) distortion to a normalized image point using
     coefficients k1, k2 (see README, Key terms).
     Returns: (x_d, y_d).
-    """
+    """ 
     ##################################
     #### START PUT CODE HERE #########
-    factor = 1.0
+    r = (x**2 + y**2) ** 0.5
+    factor = 1 + k1*r**2 + k2*r**4
     ###### END PUT CODE HERE #########
     ##################################
     return (x * factor, y * factor)
