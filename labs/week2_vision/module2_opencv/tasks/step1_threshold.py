@@ -52,18 +52,21 @@ def update(drone):
     image_gs = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     __, image_thresh = cv2.threshold(image_gs, THRESHOLD_VALUE, 255, cv2.THRESH_BINARY)
 
-    height, width = image_thresh.shape
-    counter = 0
-    for i in range (height):
-        for j in range(width):
-            if image_thresh[i][j] == 255:
-                counter += 1
-    
-    print(f"Number of white pixels is: {counter}")
-    print(f"Bright fraction is: {counter / (height * width) * 100:.2f}%")
-
     _timer += drone.get_delta_time()
     if _timer >= HOVER_TIME:
+        height, width = image_thresh.shape
+        counter = 0
+        for i in range (height):
+            for j in range(width):
+                if image_thresh[i][j] == 255:
+                    counter += 1
+        
+        print(f"Number of white pixels is: {counter}")
+        print(f"Bright fraction is: {counter / (height * width) * 100:.2f}%")
+
+        print(image_thresh.size)
+        print(height*width)
+
         _done = True
         
     ###### END PUT CODE HERE #########
