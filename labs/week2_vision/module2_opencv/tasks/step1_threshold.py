@@ -48,6 +48,24 @@ def update(drone):
     # fraction of white pixels. Advance _timer and finish (_done) once it reaches
     # HOVER_TIME. See the README (Key terms) for thresholding.
 
+    image = drone.camera.get_downward_image()
+    image_gs = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    __, image_thresh = cv2.threshold(image_gs, THRESHOLD_VALUE, 255, cv2.THRESH_BINARY)
+
+    height, width = image_thresh.shape
+    counter = 0
+    for i in range (height):
+        for j in range(width):
+            if image_thresh[i][j] == 255:
+                counter += 1
+    
+    print(f"Number of white pixels is: {counter}")
+    print(f"Bright fraction is: {counter / (height * width) * 100:.2f}%")
+
+    _timer += drone.get_delta_time()
+    if _timer >= HOVER_TIME:
+        _done = True
+        
     ###### END PUT CODE HERE #########
     ##################################
     return _done
