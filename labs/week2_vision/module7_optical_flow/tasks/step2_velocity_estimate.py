@@ -75,6 +75,49 @@ def update(drone):
     # then reset _interval. The camera moves opposite the scene flow (sign flip). Finish at
     # RUN_TIME, printing the estimate vs. true velocity. See the README (Key terms).
 
+    drone.flight.send_pcmd(PROBE_PITCH, 0, 0, 0)
+    _frame += 1
+    dt = drone.get_delta_time()
+    _timer += dt
+    _interval += dt
+
+    if _frame % SKIP == 0:
+        image = drone.camera.get_downward_image()
+        image_gs = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        if _prev_gray is None or _prev_pts is None or len(_prev_pts) < MIN_PTS:
+            _prev_pts = cv2.goodFeaturesToTrack(image_gs, **FEATURE_PARAMS)
+        else:
+            points, status, err = cv2.calcOpticalFlowPyrLK(_prev_gray, image_gs, _prev_pts, None, **LK_PARAMS)
+            
+            if points is not None and status is not None:
+                good = status.flatten() == 1
+                good_new_points = points[good].reshape(-1, 2)
+                good_old_points = _prev_pts[good].reshape(-1, 2)
+
+                if len(good_new_points) > 0:
+                    displacement = good_new_points - good_old_points
+
+                    displacement_x = displacement[:,0].mean()
+                    displacement_y = displacement[:,1].mean()
+                    meters_per_pixel = 2 * neo_lab.height(drone) * HFOV_TAN / IMAGE_WIDTH
+
+                    velocity_x = meters_per_pixel * displacement_x / _interval
+                    velocity_y = meters_per_pixel * displacement_y / _interval
+                    x, y, z = drone.physics.get_linear_velocity()
+
+                    if _timer >= RUN_TIME:
+                        print(neo_lab.height(drone))
+                        print(f"Estimated velocity: {velocity_x:.2f}, {velocity_y:.2f} \n True velocity: {x:.2f}, {z:.2f}")
+                        _done = True
+                _prev_pts = good_new_points.reshape(-1, 1, 2)
+
+        _prev_gray = image_gs
+        _interval = 0
+
+
+
+
+
     ###### END PUT CODE HERE #########
     ##################################
     return _done

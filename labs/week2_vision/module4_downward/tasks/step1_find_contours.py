@@ -48,6 +48,15 @@ def update(drone):
     # neo_lab.bright_mask(image, V_MIN) gives a 0/255 mask. Find its contours and, after
     # HOVER_TIME, print how many there are and set _done. See the README (Key terms).
 
+    image = drone.camera.get_downward_image()
+    mask = neo_lab.bright_mask(image, V_MIN)
+    contours = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    _timer += drone.get_delta_time()
+    if _timer >= HOVER_TIME:
+        print(f"Number of contours: {len(contours)}")
+        _done = True
+
     ###### END PUT CODE HERE #########
     ##################################
     return _done

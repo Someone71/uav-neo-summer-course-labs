@@ -69,6 +69,33 @@ def update(drone):
     # time. Finish at HOVER_TIME, printing _last_mag. See the README (Key terms) and the
     # OpenCV sparse optical-flow functions.
 
+    drone.flight.send_pcmd(PROBE_PITCH, 0, 0, 0)
+    _frame += 1
+
+    if _frame % SKIP == 0:
+        image = drone.camera.get_downward_image()
+        image_gs = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        if _prev_gray is None or _prev_pts is None or len(_prev_pts) < MIN_PTS:
+            _prev_pts = cv2.goodFeaturesToTrack(image_gs, **FEATURE_PARAMS)
+        else:
+            points, status, err = cv2.calcOpticalFlowPyrLK(_prev_gray, image_gs, _prev_pts, None, **LK_PARAMS)
+            
+            if points is not None and status is not None:
+                good = status.flatten() == 1
+                good_new_points = points[good].reshape(-1, 2)
+                good_old_points = _prev_pts[good].reshape(-1, 2)
+
+                if len(good_new_points) > 0:
+                    displacement = np.linalg.norm(good_new_points - good_old_points, axis = 1)
+                    _last_mag = np.mean(displacement)
+                _prev_pts = good_new_points.reshape(-1, 1, 2)
+        _prev_gray = image_gs
+            
+    _timer += drone.get_delta_time()
+    if _timer >= HOVER_TIME:
+        print(f"Average displacement: {_last_mag}")
+        _done = True
+
     ###### END PUT CODE HERE #########
     ##################################
     return _done
