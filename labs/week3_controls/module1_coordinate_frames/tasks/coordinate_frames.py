@@ -12,7 +12,6 @@ A completed reference lives in ../solutions/coordinate_frames.py
 
 import numpy as np
 
-
 # ── Part A: Euler angles -> rotation matrix ─────────────────────────────────────────
 def euler_to_rot(roll, pitch, yaw):
     """
@@ -21,11 +20,12 @@ def euler_to_rot(roll, pitch, yaw):
     """
     ##################################
     #### START PUT CODE HERE #########
-    R = np.eye(3)
+    R = np.array([[np.cos(pitch)*np.cos(yaw), np.sin(roll)*np.sin(pitch)*np.cos(yaw) - np.cos(roll)*np.sin(yaw), np.cos(roll)*np.sin(pitch)*np.cos(yaw) + np.sin(roll)*np.sin(yaw)],
+                   [np.cos(pitch)*np.sin(yaw), np.sin(roll)*np.sin(pitch)*np.sin(yaw) + np.cos(roll)*np.cos(yaw), np.cos(roll)*np.sin(pitch)*np.sin(yaw) - np.sin(roll)*np.cos(yaw)],
+                   [-np.sin(pitch), np.sin(roll)*np.cos(pitch), np.cos(roll)*np.cos(pitch)]])
     ###### END PUT CODE HERE #########
     ##################################
     return R
-
 
 # ── Part A: rotation matrix -> quaternion ───────────────────────────────────────────
 def rot_to_quat(R):
@@ -35,10 +35,13 @@ def rot_to_quat(R):
     """
     ##################################
     #### START PUT CODE HERE #########
-    w = 1.0
-    x = 0.0
-    y = 0.0
-    z = 0.0
+
+    trace = np.trace(R)
+
+    w = (trace + 1) ** 0.5 / 2
+    x = (R[2, 1] - R[1, 2]) / (4 * w)
+    y = (R[0, 2] - R[2, 0]) / (4 * w)
+    z = (R[1, 0] - R[0, 1]) / (4 * w)
     ###### END PUT CODE HERE #########
     ##################################
     return np.array([x, y, z, w])
@@ -46,6 +49,7 @@ def rot_to_quat(R):
 
 # ── Part 0: static frame transform (ENU <-> NED) ────────────────────────────────────
 def enu_to_ned(vec):
+
     """
     Convert a vector from ENU (East, North, Up) to NED (North, East, Down).
     See the README (Key terms) for how the two conventions relate.
@@ -53,7 +57,7 @@ def enu_to_ned(vec):
     e, n, u = vec
     ##################################
     #### START PUT CODE HERE #########
-    result = np.array([0.0, 0.0, 0.0])  # YOUR CODE HERE
+    result = np.array([n, e, -u])  # YOUR CODE HERE
     ###### END PUT CODE HERE #########
     ##################################
     return result
@@ -67,8 +71,8 @@ def thrust_allocation(mass, k_f, total_thrust):
     """
     ##################################
     #### START PUT CODE HERE #########
-    per = 0.0    # YOUR CODE HERE
-    omega = 0.0  # YOUR CODE HERE
+    per = total_thrust / 4
+    omega = (per / k_f) ** 0.5
     ###### END PUT CODE HERE #########
     ##################################
     return omega, per
@@ -78,7 +82,7 @@ def hover_thrust(mass, g=9.81):
     """Total thrust (N) needed to hover (see README, Key terms)."""
     ##################################
     #### START PUT CODE HERE #########
-    return 0.0  # YOUR CODE HERE
+    return mass * g
     ###### END PUT CODE HERE #########
     ##################################
 

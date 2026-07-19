@@ -45,7 +45,7 @@ def pid_control(err, err_int, err_dot, kp, ki, kd):
     """Return the PID controller output from the three gain terms (see README, Key terms)."""
     ##################################
     #### START PUT CODE HERE #########
-    output = 0.0
+    output = err * kp + err_int + ki + err_dot * kd
     ###### END PUT CODE HERE #########
     ##################################
     return output
@@ -77,6 +77,43 @@ def update(drone):
     # between gates. Turn the gate's horizontal offset from the image center into a
     # normalized error, PID it to a yaw command clamped to MAX_YAW, and sweep at SEARCH_YAW
     # when no gate is in view. See the README (Key terms) and Week 2 for finding gates.
+
+    dt = drone.get_delta_time()
+    image = drone.camera.get_color_image()
+
+    if _target_col is None:
+        gate = neo_lab.gate_nearest_center(image, V_MIN, MIN_AREA)
+    else:
+        gate = neo_lab.gate_nearest_to(image, _target_col, V_MIN, MIN_AREA)
+
+    if gate is None:
+        _target_col = None
+        _err_int = 0
+        _prev_err = 0
+        _hold = 0
+        drone.flight.send_pcmd(0, 0, SEARCH_YAW, 0)
+    else:
+        __, _target_col = uav_utils.get_contour_center(gate)
+
+        err = (_target_col - COL_CENTER) / COL_CENTER
+        _err_int += err * dt
+        err_d = (err - _prev_err) / dt
+
+        _prev_err = err
+
+        yaw = uav_utils.clamp(pid_control(err, _err_int, err_d, KP, KI, KD), -MAX_YAW, MAX_YAW)
+
+        drone.flight.send_pcmd(0, 0, yaw, 0)
+
+        if abs(err) <= CENTER_TOL:
+            _hold += dt
+        else:
+            _hold = 0
+        
+        if _hold >= HOLD_TIME:
+            print("Finished step 3")
+            _done = True
+    
 
     ###### END PUT CODE HERE #########
     ##################################

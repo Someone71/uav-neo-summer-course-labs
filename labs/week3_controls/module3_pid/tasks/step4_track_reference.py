@@ -60,7 +60,7 @@ def pid_control(err, err_int, err_dot, kp, ki, kd):
     """Return the PID controller output from the three gain terms (see README, Key terms)."""
     ##################################
     #### START PUT CODE HERE #########
-    output = 0.0
+    output = err * kp + err_int * ki + err_dot * kd
     ###### END PUT CODE HERE #########
     ##################################
     return output
@@ -94,6 +94,20 @@ def update(drone):
     # to build. Sum feedback + feedforward, clamp to +/-THROTTLE_LIMIT, and send it as
     # throttle. Update _max_err with the largest abs(error) so far. See the README
     # ("Tracking a moving target") for why the feedforward term removes the lag.
+
+    dt = drone.get_delta_time()
+
+    err = r - neo_lab.height(drone)
+    _err_int = uav_utils.clamp(_err_int + err * dt, -INT_CLAMP, INT_CLAMP)
+    err_d = (err - _prev_err) / dt
+
+    _prev_err = err
+
+    throttle = uav_utils.clamp(pid_control(err, _err_int, err_d, KP, KI, KD) + KFF * r_dot, -THROTTLE_LIMIT, THROTTLE_LIMIT)
+    drone.flight.send_pcmd(0, 0, 0, throttle)
+
+    if abs(err) > _max_err:
+        _max_err = abs(err)
 
     ###### END PUT CODE HERE #########
     ##################################

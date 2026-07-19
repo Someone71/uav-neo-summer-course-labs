@@ -45,6 +45,16 @@ def update(drone):
     # degrees; yaw is the compass heading). Turn slowly with PROBE_YAW so the heading
     # visibly changes, and after HOVER_TIME stop, print the final yaw, and set _done.
 
+    drone.flight.send_pcmd(0, 0, PROBE_YAW, 0)
+
+    pitch, roll, yaw = drone.physics.get_attitude()
+
+    _timer += drone.get_delta_time()
+
+    if _timer >= HOVER_TIME:
+        print(f"Yaw: {yaw}")
+        _done = True
+
     ###### END PUT CODE HERE #########
     ##################################
     return _done
