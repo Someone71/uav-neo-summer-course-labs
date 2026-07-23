@@ -65,9 +65,36 @@ def update(drone):
     # PD command per axis (roll for right, pitch for forward, throttle for height).
     # When you are within WP_TOL of the current corner on both axes, advance _wp += 1.
 
+    dt = drone.get_delta_time()
+    vx, vy, vz = drone.physics.get_linear_velocity()
+
+    _x += vx * dt
+    _z += vz * dt
+    _y  = neo_lab.height(drone)
+
+    err_x = WAYPOINTS[_wp][0] - _x
+    err_z = WAYPOINTS[_wp][1] - _z
+    err_y = TARGET_HEIGHT - _y
+
+    pitch = uav_utils.clamp(err_z * KP_POS - vz * KD_POS, -PITCH_LIMIT, PITCH_LIMIT)
+    roll = uav_utils.clamp(err_x * KP_POS - vx * KD_POS, -ROLL_LIMIT, ROLL_LIMIT)
+    throttle = uav_utils.clamp(err_y * ALT_KP - vy, -THROTTLE_LIMIT, THROTTLE_LIMIT)
+
+    drone.flight.send_pcmd(pitch, roll, 0, throttle)
+
+    if abs(err_x) <= WP_TOL and abs(err_z) <= WP_TOL:
+        print("Next step")
+        _wp += 1
+
+    if _wp == 4:
+        print("Done")
+        drone.flight.stop()
+        _done = True
+
     ###### END PUT CODE HERE #########
     ##################################
     return _done
+
 
 
 if __name__ == "__main__":

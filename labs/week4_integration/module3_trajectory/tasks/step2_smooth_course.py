@@ -70,7 +70,11 @@ def hermite(p0, m0, p1, m1, s):
     # Combine the four Hermite basis functions of s with p0, m0, p1, m1 to return one
     # blended value. See the README ("Building a smooth path") for the four basis
     # functions h00, h10, h01, h11 and how they weight the endpoints and tangents.
-    result = p0
+    h00 = 2 * s**3 - 3 * s**2 + 1
+    h10 = s**3 - 2 * s**2 + s
+    h01 = -2 * s**3 + 3 * s**2
+    h11 = s**3 - s**2
+    result = h00 * p0 + h10 * m0 + h01 * p1 + h11 * m1
     ###### END PUT CODE HERE #########
     ##################################
     return result
